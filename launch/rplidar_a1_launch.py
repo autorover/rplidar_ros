@@ -9,10 +9,24 @@ from launch.actions import LogInfo
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+import pyudev
+def find_dev_ttyUSB(vendor_id):
+    context = pyudev.Context()
+    ttyUSB = None
+    for device in context.list_devices(subsystem='tty', ID_BUS='usb'):
+        try:
+            dev = dict(device)
+            usb_vendor_id = dev['ID_VENDOR_ID']
+            if usb_vendor_id == vendor_id:
+                 ttyUSB = '/dev/' + device.sys_name
+                 break
+        except pyudev.DeviceNotFound:
+            pass
+    return ttyUSB
 
 def generate_launch_description():
     channel_type =  LaunchConfiguration('channel_type', default='serial')
-    serial_port = LaunchConfiguration('serial_port', default='/dev/ttyUSB1')
+    serial_port = LaunchConfiguration('serial_port', default=find_dev_ttyUSB("10c4"))
     serial_baudrate = LaunchConfiguration('serial_baudrate', default='115200')
     frame_id = LaunchConfiguration('frame_id', default='lidar')
     inverted = LaunchConfiguration('inverted', default='false')
